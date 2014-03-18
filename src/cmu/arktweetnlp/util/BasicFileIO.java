@@ -240,14 +240,11 @@ public class BasicFileIO {
 	/** Try to get a file, if it doesn't exist, backoff to a resource. 
 	 * @throws IOException **/
 	public static BufferedReader openFileOrResource(String fileOrResource) throws IOException {
-		try {
-			if (new File(fileOrResource).exists()) {
-				return openFileToReadUTF8(fileOrResource);
-			} else {
-				return getResourceReader(fileOrResource);
-			}			
-		} catch (IOException e) {
-			throw new IOException("Neither file nor resource found for: " + fileOrResource);
-		}
+        File f = new File(fileOrResource);
+        if (f.isFile() && f.canRead()) {
+            return openFileToReadUTF8(fileOrResource);
+        } else {
+            return getResourceReader(fileOrResource);
+        }			
 	}
 }
