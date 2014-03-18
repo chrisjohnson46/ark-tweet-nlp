@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import cmu.arktweetnlp.Twokenize;
+import cmu.arktweetnlp.RawTwokenize;
 import cmu.arktweetnlp.impl.features.FeatureExtractor.FeatureExtractorInterface;
 import cmu.arktweetnlp.impl.features.FeatureExtractor.PositionFeaturePairs;
 
@@ -118,10 +118,10 @@ public class MiscFeatures {
 	}
 	public static class SimpleOrthFeatures implements FeatureExtractorInterface {
 		public Pattern hasDigit = Pattern.compile("[0-9]");
-		/** TODO change to punctuation class, or better from Twokenize **/
+		/** TODO change to punctuation class, or better from RawTwokenize **/
 		//Pattern allPunct = Pattern.compile("^[^a-zA-Z0-9]*$");
 		Pattern allPunct = Pattern.compile("^\\W*$");
-		Pattern emoticon = Pattern.compile(Twokenize.emoticon);
+		Pattern emoticon = Pattern.compile(RawTwokenize.emoticon);
 		public void addFeatures(List<String> tokens, PositionFeaturePairs pairs) {
 			for (int t=0; t < tokens.size(); t++) {
 				String tok = tokens.get(t);
@@ -154,8 +154,8 @@ public class MiscFeatures {
 		}    
 	}
 	public static class URLFeatures implements FeatureExtractorInterface {	
-		Pattern validURL = Pattern.compile(Twokenize.url);
-		Pattern validEmail = Pattern.compile(Twokenize.Email);
+		Pattern validURL = Pattern.compile(RawTwokenize.url);
+		Pattern validEmail = Pattern.compile(RawTwokenize.Email);
 		public void addFeatures(List<String> tokens, PositionFeaturePairs pairs) {
 			for (int t=0; t < tokens.size(); t++) {
 				String tok = tokens.get(t);
