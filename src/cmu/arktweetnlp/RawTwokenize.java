@@ -1,10 +1,11 @@
 package cmu.arktweetnlp;
 
+import cmu.arktweetnlp.util.ComparablePair;
 import java.util.regex.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.TreeSet;
 import java.util.Collections;
 import org.apache.commons.lang.StringEscapeUtils;
 
@@ -203,14 +204,8 @@ public class RawTwokenize {
         return input;
     }
     
-    private static class Pair<T1, T2> {
-        public T1 first;
-        public T2 second;
-        public Pair(T1 x, T2 y) { first=x; second=y; }
-    }
-
     // The main work of tokenizing a tweet.
-    public static List<Integer> simpleTokenize (String text) {
+    public static List<ComparablePair<Integer, Integer>> simpleTokenize (String text) {
 
         // Do the no-brainers first
         String splitPunctText = splitEdgePunct(text);
@@ -224,64 +219,54 @@ public class RawTwokenize {
         // Find the matches for subsequences that should be protected,
         // e.g. URLs, 1.0, U.N.K.L.E., 12:53
         Matcher matches = Protected.matcher(splitPunctText);
-        List<Pair<Integer,Integer>> badSpans = new ArrayList<Pair<Integer,Integer>>();
+        List<ComparablePair<Integer,Integer>> badSpans = new ArrayList<ComparablePair<Integer,Integer>>();
         while(matches.find()){
             // The spans of the "bads" should not be split.
             if (matches.start() != matches.end()){ //unnecessary?
-                badSpans.add(new Pair<Integer, Integer>(matches.start(),matches.end()));
+                badSpans.add(new ComparablePair<Integer, Integer>(matches.start(),matches.end()));
             }
         }
 
-        // Create a list of indices to create the "goods", which can be
-        // split. We are taking "bad" spans like 
-        //     List((2,5), (8,10)) 
-        // to create 
-        ///    List(0, 2, 5, 8, 10, 12)
-        // where, e.g., "12" here would be the textLength
-        // has an even length and no indices are the same
-        List<Integer> indices = new ArrayList<Integer>(2+2*badSpans.size());
-        indices.add(0);
-        for(Pair<Integer,Integer> p:badSpans){
-            indices.add(p.first);
-            indices.add(p.second);
+        List<ComparablePair<Integer, Integer>> candidateGoodSpans = new ArrayList<ComparablePair<Integer,Integer>>();
+        
+        ComparablePair<Integer, Integer> first = badSpans.get(0);
+        if (first.first != 0) {
+            candidateGoodSpans.add(new ComparablePair<Integer, Integer>(0, first.first));
         }
-        indices.add(textLength);
+
+        ComparablePair<Integer, Integer> last = badSpans.get(badSpans.size()-1);
+        if (first.second != splitPunctText.length()) {
+            candidateGoodSpans.add(new ComparablePair<Integer, Integer>(first.second, splitPunctText.length()));
+        }
+
+        for (int i = 1; i < badSpans.size()-2; i++) {
+            ComparablePair<Integer, Integer> span1 = badSpans.get(i);
+            ComparablePair<Integer, Integer> span2 = badSpans.get(i+1);
+            candidateGoodSpans.add(new ComparablePair<Integer, Integer>(span1.second, span2.first));
+        }
 
         // Group the indices and map them to their respective portion of the string
-        List<List<Integer>> goods = new ArrayList<List<Integer>>();
-        for (int i=0; i<indices.size(); i+=2) {
-            String goodString = splitPunctText.substring(indices.get(i), indices.get(i+1));
-            System.out.printf("'%s'\t%d\t%d\n", goodString, indices.get(i), indices.get(i+1));
+        List<ComparablePair<Integer, Integer>> goodSpans = new ArrayList<ComparablePair<Integer, Integer>>();
+        for (ComparablePair<Integer, Integer> span : candidateGoodSpans) {
+            int start = span.first;
+            int end = span.second;
+            String goodString = splitPunctText.substring(start, end);
+            System.out.printf("'GOODCAND\t%s'\t%d\t%d\n", goodString, start, end);
             Matcher splitMatcher = Pattern.compile("[^ ]+").matcher(goodString);
-            List<Integer> spaceLocations = new ArrayList<Integer>();
-            spaceLocations.add(indices.get(i));
             while(splitMatcher.find()) {
-                int startSpace = splitMatcher.start() + indices.get(i);
-                int endSpace   = splitMatcher.end() + indices.get(i);
+                int startSpace = splitMatcher.start() + start;
+                int endSpace   = splitMatcher.end() + start;
                 if (startSpace == endSpace) continue;
-                spaceLocations.add(startSpace);
-                spaceLocations.add(endSpace);
+                System.out.printf("GOODPOR\t%d\t%d\t%s\n", startSpace, endSpace, splitPunctText.substring(startSpace, endSpace));
+                goodSpans.add(new ComparablePair<Integer, Integer>(startSpace, endSpace));
             }
-            spaceLocations.add(indices.get(i+1));
-            goods.add(spaceLocations);
         }
 
-        List<Integer> zipped = new ArrayList<Integer>();
-        for (List<Integer> p : goods) {
-            System.out.println(p);
-            zipped.addAll(p);
-        }
-        zipped.addAll(indices);
-        zipped = new ArrayList<Integer>(new HashSet<Integer>(zipped));
-        Collections.sort(zipped);
-        
-        List<Integer> ret = new ArrayList<Integer>();
-        for (int i = 0; i < zipped.size()-1; i++) {
-            if ((zipped.get(i) - zipped.get(i+1)) == 0) continue;
-            ret.add(zipped.get(i));
-        }
-        
-        System.out.println(ret);
+        List<ComparablePair<Integer, Integer>> ret = new ArrayList<ComparablePair<Integer, Integer>>();
+        ret.addAll(goodSpans);
+        ret.addAll(badSpans);
+        ret = new ArrayList<ComparablePair<Integer, Integer>>(new TreeSet<ComparablePair<Integer, Integer>>(ret));
+        Collections.sort(ret);
 
         return ret;
     }  
@@ -308,7 +293,7 @@ public class RawTwokenize {
     }
 
     /** Assume 'text' has no HTML escaping. **/
-    public static List<Integer> tokenize(String text){
+    public static List<ComparablePair<Integer, Integer>> tokenize(String text){
         return simpleTokenize(squeezeWhitespace(text));
     }
 
@@ -334,7 +319,7 @@ public class RawTwokenize {
      * So the tokens you get back may not exactly correspond to
      * substrings of the original text.
      */
-    public static List<Integer> tokenizeRawTweetText(String text) {
+    public static List<ComparablePair<Integer, Integer>> tokenizeRawTweetText(String text) {
         return tokenize(normalizeTextForTagger(text));
     }
 }

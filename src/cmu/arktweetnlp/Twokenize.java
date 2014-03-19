@@ -1,5 +1,7 @@
 package cmu.arktweetnlp;
 
+import cmu.arktweetnlp.util.ComparablePair; 
+
 import java.util.regex.*;
 import java.util.Arrays;
 import java.util.List;
@@ -32,12 +34,16 @@ public class Twokenize {
     // The main work of tokenizing a tweet.
     private static List<String> simpleTokenize (String text) {
         List<String> ret = new ArrayList<String>();
-        List<Integer> indices = RawTwokenize.simpleTokenize(text);
+        List<ComparablePair<Integer, Integer>> indices = RawTwokenize.simpleTokenize(text);
 
         text = RawTwokenize.splitEdgePunct(text);
-        for (int i = 0; i < indices.size()-1; i += 2) {
-            System.out.printf("%d\t%d\t%d\n", text.length(), indices.get(i), indices.get(i+1));
-            ret.add(text.substring(indices.get(i), indices.get(i+1)));
+        for (ComparablePair<Integer, Integer> span : indices) {
+            int start = span.first;
+            int end   = span.second;
+            System.out.printf("%d\t%d\t%d\t", text.length(), start, end);
+            String sub = text.substring(start, end);
+            ret.add(sub);
+            System.out.printf("%s\n", sub);
         }
  
         return ret;
