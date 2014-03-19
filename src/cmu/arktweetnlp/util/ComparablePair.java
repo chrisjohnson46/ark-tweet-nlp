@@ -16,4 +16,9 @@ public class ComparablePair<T1, T2> implements Comparable<ComparablePair<T1, T2>
         ret &= second == other.second;
         return ret;
     }
+
+    @Override
+    public String toString() {
+        return String.format("(%s, %s)", first.toString(), second.toString());
+    }
 }

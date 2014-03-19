@@ -203,6 +203,16 @@ public class RawTwokenize {
         input = m1.replaceAll("$1 $2$3");
         return input;
     }
+   
+    public static void debugPrint(String desc, List<ComparablePair<Integer, Integer>> l) {
+        System.out.print(desc);
+        System.out.print(" ");
+        for (ComparablePair<Integer, Integer> p : l) {
+            System.out.print(p.toString());
+            System.out.print(" ");
+        }
+        System.out.println();
+    }
     
     // The main work of tokenizing a tweet.
     public static List<ComparablePair<Integer, Integer>> simpleTokenize (String text) {
@@ -221,53 +231,66 @@ public class RawTwokenize {
         Matcher matches = Protected.matcher(splitPunctText);
         List<ComparablePair<Integer,Integer>> badSpans = new ArrayList<ComparablePair<Integer,Integer>>();
         while(matches.find()){
+            int start = matches.start();
+            int end = matches.end();
             // The spans of the "bads" should not be split.
-            if (matches.start() != matches.end()){ //unnecessary?
-                badSpans.add(new ComparablePair<Integer, Integer>(matches.start(),matches.end()));
+            if (start != end) {
+                badSpans.add(new ComparablePair<Integer, Integer>(start, end));
             }
         }
+        debugPrint("bad", badSpans);
 
+        //
+        // Find the portions of the tweet which can be split further ("good" spans)
         List<ComparablePair<Integer, Integer>> candidateGoodSpans = new ArrayList<ComparablePair<Integer,Integer>>();
-        
+        // First special case: add the initial part of the string
         ComparablePair<Integer, Integer> first = badSpans.get(0);
         if (first.first != 0) {
             candidateGoodSpans.add(new ComparablePair<Integer, Integer>(0, first.first));
         }
-
+        // Second special case: add the final part of the string
         ComparablePair<Integer, Integer> last = badSpans.get(badSpans.size()-1);
-        if (first.second != splitPunctText.length()) {
-            candidateGoodSpans.add(new ComparablePair<Integer, Integer>(first.second, splitPunctText.length()));
+        if (last.second != splitPunctText.length()) {
+            candidateGoodSpans.add(new ComparablePair<Integer, Integer>(last.second, splitPunctText.length()));
         }
-
-        for (int i = 1; i < badSpans.size()-2; i++) {
+        // Add the spaces inbetween each of the bad spans
+        for (int i = 0; i < badSpans.size()-1; i++) {
             ComparablePair<Integer, Integer> span1 = badSpans.get(i);
             ComparablePair<Integer, Integer> span2 = badSpans.get(i+1);
             candidateGoodSpans.add(new ComparablePair<Integer, Integer>(span1.second, span2.first));
         }
-
-        // Group the indices and map them to their respective portion of the string
+        debugPrint("goodcand", candidateGoodSpans);
+        // 
+        // Further split the good poitions and add to the output
+        // Final list of good spans
         List<ComparablePair<Integer, Integer>> goodSpans = new ArrayList<ComparablePair<Integer, Integer>>();
         for (ComparablePair<Integer, Integer> span : candidateGoodSpans) {
             int start = span.first;
             int end = span.second;
+            // Fetch the relevant part of the string
             String goodString = splitPunctText.substring(start, end);
-            System.out.printf("'GOODCAND\t%s'\t%d\t%d\n", goodString, start, end);
+            System.out.println(goodString);
+            System.out.printf("%d\t%d\n", start, end);
+            // Match any non-space portions of the string and add them
+            // to the output
             Matcher splitMatcher = Pattern.compile("[^ ]+").matcher(goodString);
             while(splitMatcher.find()) {
                 int startSpace = splitMatcher.start() + start;
-                int endSpace   = splitMatcher.end() + start;
-                if (startSpace == endSpace) continue;
-                System.out.printf("GOODPOR\t%d\t%d\t%s\n", startSpace, endSpace, splitPunctText.substring(startSpace, endSpace));
+                int endSpace   = splitMatcher.end()   + start;
+                if (startSpace == endSpace) continue;  // No point in adding empty substrings
                 goodSpans.add(new ComparablePair<Integer, Integer>(startSpace, endSpace));
             }
         }
-
+        debugPrint("good", goodSpans);
+        // Combine the bad and good spans
         List<ComparablePair<Integer, Integer>> ret = new ArrayList<ComparablePair<Integer, Integer>>();
         ret.addAll(goodSpans);
         ret.addAll(badSpans);
+        // Remove duplicates 
         ret = new ArrayList<ComparablePair<Integer, Integer>>(new TreeSet<ComparablePair<Integer, Integer>>(ret));
+        // Sort
         Collections.sort(ret);
-
+        debugPrint("ret", ret);
         return ret;
     }  
 
