@@ -232,21 +232,26 @@ public class RawTwokenize {
         //
         // Find the portions of the tweet which can be split further ("good" spans)
         List<ComparablePair<Integer, Integer>> candidateGoodSpans = new ArrayList<ComparablePair<Integer,Integer>>();
-        // First special case: add the initial part of the string
-        ComparablePair<Integer, Integer> first = badSpans.get(0);
-        if (first.first != 0) {
-            candidateGoodSpans.add(new ComparablePair<Integer, Integer>(0, first.first));
+        if (badSpans.size() == 0) {
+            candidateGoodSpans.add(new ComparablePair<Integer, Integer>(0, splitPunctText.length()));
         }
-        // Second special case: add the final part of the string
-        ComparablePair<Integer, Integer> last = badSpans.get(badSpans.size()-1);
-        if (last.second != splitPunctText.length()) {
-            candidateGoodSpans.add(new ComparablePair<Integer, Integer>(last.second, splitPunctText.length()));
-        }
-        // Add the spaces inbetween each of the bad spans
-        for (int i = 0; i < badSpans.size()-1; i++) {
-            ComparablePair<Integer, Integer> span1 = badSpans.get(i);
-            ComparablePair<Integer, Integer> span2 = badSpans.get(i+1);
-            candidateGoodSpans.add(new ComparablePair<Integer, Integer>(span1.second, span2.first));
+        else {
+            // First special case: add the initial part of the string
+            ComparablePair<Integer, Integer> first = badSpans.get(0);
+            if (first.first != 0) {
+                candidateGoodSpans.add(new ComparablePair<Integer, Integer>(0, first.first));
+            }
+            // Second special case: add the final part of the string
+            ComparablePair<Integer, Integer> last = badSpans.get(badSpans.size()-1);
+            if (last.second != splitPunctText.length()) {
+                candidateGoodSpans.add(new ComparablePair<Integer, Integer>(last.second, splitPunctText.length()));
+            }
+            // Add the spaces inbetween each of the bad spans
+            for (int i = 0; i < badSpans.size()-1; i++) {
+                ComparablePair<Integer, Integer> span1 = badSpans.get(i);
+                ComparablePair<Integer, Integer> span2 = badSpans.get(i+1);
+                candidateGoodSpans.add(new ComparablePair<Integer, Integer>(span1.second, span2.first));
+            }
         }
         // 
         // Further split the good poitions and add to the output
