@@ -203,16 +203,6 @@ public class RawTwokenize {
         input = m1.replaceAll("$1 $2$3");
         return input;
     }
-   
-    public static void debugPrint(String desc, List<ComparablePair<Integer, Integer>> l) {
-        System.out.print(desc);
-        System.out.print(" ");
-        for (ComparablePair<Integer, Integer> p : l) {
-            System.out.print(p.toString());
-            System.out.print(" ");
-        }
-        System.out.println();
-    }
     
     // The main work of tokenizing a tweet.
     public static List<ComparablePair<Integer, Integer>> simpleTokenize (String text) {
@@ -238,7 +228,6 @@ public class RawTwokenize {
                 badSpans.add(new ComparablePair<Integer, Integer>(start, end));
             }
         }
-        debugPrint("bad", badSpans);
 
         //
         // Find the portions of the tweet which can be split further ("good" spans)
@@ -259,7 +248,6 @@ public class RawTwokenize {
             ComparablePair<Integer, Integer> span2 = badSpans.get(i+1);
             candidateGoodSpans.add(new ComparablePair<Integer, Integer>(span1.second, span2.first));
         }
-        debugPrint("goodcand", candidateGoodSpans);
         // 
         // Further split the good poitions and add to the output
         // Final list of good spans
@@ -281,7 +269,6 @@ public class RawTwokenize {
                 goodSpans.add(new ComparablePair<Integer, Integer>(startSpace, endSpace));
             }
         }
-        debugPrint("good", goodSpans);
         // Combine the bad and good spans
         List<ComparablePair<Integer, Integer>> ret = new ArrayList<ComparablePair<Integer, Integer>>();
         ret.addAll(goodSpans);
@@ -290,7 +277,6 @@ public class RawTwokenize {
         ret = new ArrayList<ComparablePair<Integer, Integer>>(new TreeSet<ComparablePair<Integer, Integer>>(ret));
         // Sort
         Collections.sort(ret);
-        debugPrint("ret", ret);
         return ret;
     }  
 
