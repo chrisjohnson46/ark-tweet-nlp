@@ -34,7 +34,9 @@ public class Twokenize {
         List<String> ret = new ArrayList<String>();
         List<Integer> indices = RawTwokenize.simpleTokenize(text);
 
-        for (int i = 0; i < indices.size(); i += 2) {
+        text = RawTwokenize.splitEdgePunct(text);
+        for (int i = 0; i < indices.size()-1; i += 2) {
+            System.out.printf("%d\t%d\t%d\n", text.length(), indices.get(i), indices.get(i+1));
             ret.add(text.substring(indices.get(i), indices.get(i+1)));
         }
  

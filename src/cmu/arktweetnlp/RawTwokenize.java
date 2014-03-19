@@ -4,6 +4,7 @@ import java.util.regex.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Collections;
 import org.apache.commons.lang.StringEscapeUtils;
 
@@ -249,12 +250,15 @@ public class RawTwokenize {
         // Group the indices and map them to their respective portion of the string
         List<List<Integer>> goods = new ArrayList<List<Integer>>();
         for (int i=0; i<indices.size(); i+=2) {
-            Matcher splitMatcher = Protected.matcher(splitPunctText.substring(indices.get(i), indices.get(i+1)));
+            String goodString = splitPunctText.substring(indices.get(i), indices.get(i+1));
+            System.out.printf("'%s'\t%d\t%d\n", goodString, indices.get(i), indices.get(i+1));
+            Matcher splitMatcher = Pattern.compile("[^ ]+").matcher(goodString);
             List<Integer> spaceLocations = new ArrayList<Integer>();
             spaceLocations.add(indices.get(i));
-            while(matches.find()) {
-                int startSpace = splitMatcher.start() - 1;
-                int endSpace   = splitMatcher.end();
+            while(splitMatcher.find()) {
+                int startSpace = splitMatcher.start() + indices.get(i);
+                int endSpace   = splitMatcher.end() + indices.get(i);
+                if (startSpace == endSpace) continue;
                 spaceLocations.add(startSpace);
                 spaceLocations.add(endSpace);
             }
@@ -264,11 +268,22 @@ public class RawTwokenize {
 
         List<Integer> zipped = new ArrayList<Integer>();
         for (List<Integer> p : goods) {
+            System.out.println(p);
             zipped.addAll(p);
         }
         zipped.addAll(indices);
+        zipped = new ArrayList<Integer>(new HashSet<Integer>(zipped));
         Collections.sort(zipped);
-        return zipped;
+        
+        List<Integer> ret = new ArrayList<Integer>();
+        for (int i = 0; i < zipped.size()-1; i++) {
+            if ((zipped.get(i) - zipped.get(i+1)) == 0) continue;
+            ret.add(zipped.get(i));
+        }
+        
+        System.out.println(ret);
+
+        return ret;
     }  
 
     private static List<String> addAllnonempty(List<String> master, List<String> smaller){
