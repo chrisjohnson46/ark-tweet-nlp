@@ -50,7 +50,7 @@ class RawTagger {
         sentence.tokens = sentenceTokens;
         ms = new ModelSentence(sentence.T());
         featureExtractor.computeFeatures(sentence, ms);
-        model.greedyDecode(ms, false);
+        model.greedyDecode(ms, true);
 
         // Construct the output
         List<RawTagger.TaggedToken> taggedTokens = new ArrayList<RawTagger.TaggedToken>();
