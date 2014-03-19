@@ -262,8 +262,6 @@ public class RawTwokenize {
             int end = span.second;
             // Fetch the relevant part of the string
             String goodString = splitPunctText.substring(start, end);
-            System.out.println(goodString);
-            System.out.printf("%d\t%d\n", start, end);
             // Match any non-space portions of the string and add them
             // to the output
             Matcher splitMatcher = Pattern.compile("[^ ]+").matcher(goodString);
